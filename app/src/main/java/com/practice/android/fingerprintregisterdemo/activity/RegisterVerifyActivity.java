@@ -4,7 +4,6 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -31,9 +30,9 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import android_serialport_api.FingerprintAPI;
-import utils.ToastUtil;
+import com.practice.android.fingerprintregisterdemo.utils.ToastUtil;
 
-public class FingerprintActivity extends BaseActivity implements OnClickListener {
+public class RegisterVerifyActivity extends BaseActivity implements OnClickListener {
 
     private AsyncFingerprint asyncFingerprint;
 
@@ -61,9 +60,9 @@ public class FingerprintActivity extends BaseActivity implements OnClickListener
                     showFingerImage(msg.arg1, (byte[]) msg.obj);
                     break;
                 case AsyncFingerprint.SHOW_FINGER_MODEL:
-                    FingerprintActivity.this.model = (byte[]) msg.obj;
-                    if (FingerprintActivity.this.model != null) {
-                        Log.i("whw", "#################model.length=" + FingerprintActivity.this.model.length);
+                    RegisterVerifyActivity.this.model = (byte[]) msg.obj;
+                    if (RegisterVerifyActivity.this.model != null) {
+                        Log.i("whw", "#################model.length=" + RegisterVerifyActivity.this.model.length);
                     }
                     cancelProgressDialog();
                     break;
@@ -71,16 +70,16 @@ public class FingerprintActivity extends BaseActivity implements OnClickListener
                     cancelProgressDialog();
                     if (msg.obj != null) {
                         Integer id = (Integer) msg.obj;
-                        ToastUtil.showToast(FingerprintActivity.this,
+                        ToastUtil.showToast(RegisterVerifyActivity.this,
                                 getString(R.string.register_success) + "  pageId=" + id);
                     } else {
-                        ToastUtil.showToast(FingerprintActivity.this, R.string.register_success);
+                        ToastUtil.showToast(RegisterVerifyActivity.this, R.string.register_success);
                     }
 
                     break;
                 case AsyncFingerprint.REGISTER_FAIL:
                     cancelProgressDialog();
-                    ToastUtil.showToast(FingerprintActivity.this, R.string.register_fail);
+                    ToastUtil.showToast(RegisterVerifyActivity.this, R.string.register_fail);
                     break;
                 case AsyncFingerprint.VALIDATE_RESULT1:
                     cancelProgressDialog();
@@ -90,7 +89,7 @@ public class FingerprintActivity extends BaseActivity implements OnClickListener
                     cancelProgressDialog();
                     Integer r = (Integer) msg.obj;
                     if (r != -1) {
-                        ToastUtil.showToast(FingerprintActivity.this,
+                        ToastUtil.showToast(RegisterVerifyActivity.this,
                                 getString(R.string.verifying_through) + "  pageId=" + r);
                     } else {
                         showValidateResult(false);
@@ -98,12 +97,12 @@ public class FingerprintActivity extends BaseActivity implements OnClickListener
                     break;
                 case AsyncFingerprint.UP_IMAGE_RESULT:
                     cancelProgressDialog();
-                    ToastUtil.showToast(FingerprintActivity.this, (Integer) msg.obj);
+                    ToastUtil.showToast(RegisterVerifyActivity.this, (Integer) msg.obj);
                     break;
                 case AsyncFingerprint.VERIFYMY:
                     cancelProgressDialog();
-                    ToastUtil.showToast(FingerprintActivity.this, (Integer) msg.obj + "");
-
+                    ToastUtil.showToast(RegisterVerifyActivity.this, (Integer) msg.obj + "");
+                    break;
                 default:
                     break;
             }
@@ -113,24 +112,24 @@ public class FingerprintActivity extends BaseActivity implements OnClickListener
 
     private void showValidateResult(boolean matchResult) {
         if (matchResult) {
-            ToastUtil.showToast(FingerprintActivity.this, R.string.verifying_through);
+            ToastUtil.showToast(RegisterVerifyActivity.this, R.string.verifying_through);
         } else {
-            ToastUtil.showToast(FingerprintActivity.this, R.string.verifying_fail);
+            ToastUtil.showToast(RegisterVerifyActivity.this, R.string.verifying_fail);
         }
     }
 
     private void showFingerImage(int fingerType, byte[] data) {
-        Bitmap image = BitmapFactory.decodeByteArray(data, 0, data.length);
-        // saveImage(data);
-        fingerprintImage.setBackgroundDrawable(new BitmapDrawable(image));
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+        fingerprintImage.setImageBitmap(bitmap);
         writeToFile(data);
         //ToastUtil.showToast(this, Arrays.toString(data));
+        Log.i("MyTag", Arrays.toString(data));
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.fingerprint);
+        setContentView(R.layout.fingerprint_register_verify);
 
         initView();
         initViewListener();
@@ -148,13 +147,6 @@ public class FingerprintActivity extends BaseActivity implements OnClickListener
         back = findViewById(R.id.backRegister);
 
         fingerprintImage = findViewById(R.id.fingerprintImage);
-        Button bt1 = findViewById(R.id.btn1_my);
-        bt1.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                asyncFingerprint.verifyMy();
-            }
-        });
 
     }
 
@@ -227,30 +219,28 @@ public class FingerprintActivity extends BaseActivity implements OnClickListener
 
             @Override
             public void onEmptySuccess() {
-                ToastUtil.showToast(FingerprintActivity.this, R.string.clear_flash_success);
+                ToastUtil.showToast(RegisterVerifyActivity.this, R.string.clear_flash_success);
 
             }
 
             @Override
             public void onEmptyFail() {
-                ToastUtil.showToast(FingerprintActivity.this, R.string.clear_flash_fail);
+                ToastUtil.showToast(RegisterVerifyActivity.this, R.string.clear_flash_fail);
 
             }
         });
 
         asyncFingerprint.setOnCalibrationListener(new OnCalibrationListener() {
-
             @Override
             public void onCalibrationSuccess() {
                 Log.i("whw", "onCalibrationSuccess");
-                ToastUtil.showToast(FingerprintActivity.this, R.string.calibration_success);
+                ToastUtil.showToast(RegisterVerifyActivity.this, R.string.calibration_success);
             }
 
             @Override
             public void onCalibrationFail() {
                 Log.i("whw", "onCalibrationFail");
-                ToastUtil.showToast(FingerprintActivity.this, R.string.calibration_fail);
-
+                ToastUtil.showToast(RegisterVerifyActivity.this, R.string.calibration_fail);
             }
         });
 
@@ -276,7 +266,7 @@ public class FingerprintActivity extends BaseActivity implements OnClickListener
                 if (model != null) {
                     asyncFingerprint.validate(model);
                 } else {
-                    ToastUtil.showToast(FingerprintActivity.this, R.string.first_register);
+                    ToastUtil.showToast(RegisterVerifyActivity.this, R.string.first_register);
                 }
                 break;
             case R.id.register2:
@@ -315,6 +305,7 @@ public class FingerprintActivity extends BaseActivity implements OnClickListener
                 return false;
             }
         });
+
         progressDialog.show();
     }
 

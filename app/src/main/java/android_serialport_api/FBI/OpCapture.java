@@ -13,7 +13,7 @@ import com.upek.android.ptapi.struct.PtGuiSampleImage;
 import com.upek.android.ptapi.struct.PtInputBir;
 import com.upek.android.ptapi.struct.PtSessionCfgV5;
 
-import utils.DataUtils;
+import com.practice.android.fingerprintregisterdemo.utils.DataUtils;
 
 public abstract class OpCapture extends Thread implements PtGuiStateCallback {
 	private static short SESSION_CFG_VERSION = 5;
@@ -121,7 +121,7 @@ public abstract class OpCapture extends Thread implements PtGuiStateCallback {
 			// Register notification callback of operation state
 			// Valid for entire PTAPI session lifetime
 			mConn.setGUICallbacks(null, this);
-			//Scan the live finger, process it into a fingerprint template and optionally return it to the caller.
+			//Scan the live finger, process it into a fingerprint_register_verify template and optionally return it to the caller.
 			mConn.capture(PtConstants.PT_PURPOSE_ENROLL, newTemplate, PtConstants.PT_BIO_INFINITE_TIMEOUT, null, null, null);
 			
 		} catch (PtException e) {

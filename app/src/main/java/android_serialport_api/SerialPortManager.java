@@ -13,7 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.InvalidParameterException;
 
-import utils.DataUtils;
+import com.practice.android.fingerprintregisterdemo.utils.DataUtils;
 
 public class SerialPortManager {
 

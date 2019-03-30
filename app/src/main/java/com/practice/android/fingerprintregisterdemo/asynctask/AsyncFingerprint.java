@@ -9,7 +9,7 @@ import com.practice.android.fingerprintregisterdemo.R;
 
 import android_serialport_api.FingerprintAPI;
 import android_serialport_api.FingerprintAPI.Result;
-import utils.DataUtils;
+import com.practice.android.fingerprintregisterdemo.utils.DataUtils;
 
 public class AsyncFingerprint extends Handler {
 	public static final int VERIFYMY = 100001;

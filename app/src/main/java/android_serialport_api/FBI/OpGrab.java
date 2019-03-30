@@ -5,8 +5,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 
-
-import com.practice.android.fingerprintregisterdemo.activity.FPDisplayActivity;
 import com.upek.android.ptapi.PtConnectionI;
 import com.upek.android.ptapi.PtConstants;
 import com.upek.android.ptapi.PtException;
@@ -67,12 +65,6 @@ public abstract class OpGrab extends Thread implements PtGuiStateCallback {
 		return Bitmap.createBitmap(data, iWidth, iHeight, Bitmap.Config.ARGB_8888);
 	}
 
-	private void ShowImage(byte[] aImage, int iWidth) {
-		FPDisplayActivity.mImage = CreateBitmap(aImage, iWidth);
-		FPDisplayActivity.msTitle = "Fingerprint Image";
-		Intent aIntent = new Intent(mActivity, FPDisplayActivity.class);
-		mActivity.startActivityForResult(aIntent, 0);
-	}
 
 	/**
 	 * Grab execution code.

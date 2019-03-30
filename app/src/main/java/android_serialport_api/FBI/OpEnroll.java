@@ -14,7 +14,7 @@ import com.upek.android.ptapi.struct.PtGuiSampleImage;
 import com.upek.android.ptapi.struct.PtInputBir;
 import com.upek.android.ptapi.struct.PtSessionCfgV5;
 
-import utils.DataUtils;
+import com.practice.android.fingerprintregisterdemo.utils.DataUtils;
 
 public abstract class OpEnroll extends Thread implements PtGuiStateCallback {
 	private static short SESSION_CFG_VERSION = 5;
