@@ -3,11 +3,10 @@ package android_serialport_api;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.practice.android.fingerprintregisterdemo.utils.DataUtils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.util.Arrays;
-
-import com.practice.android.fingerprintregisterdemo.utils.DataUtils;
 
 public class FingerprintAPI {
 
@@ -20,7 +19,6 @@ public class FingerprintAPI {
 
     private byte[] bufferImage = new byte[1024 * 50];
 
-    public static final int BIG_FINGERPRINT_SIZE = 50052;
     public static final int SMALL_FINGERPRINT_SIZE = 40044;
 
     private static int CURRENT_FINGERPRINT_SIZE;
@@ -66,23 +64,10 @@ public class FingerprintAPI {
      */
     public static final int FINGERPRINT_NO_MATCH = 0x08;
     /**
-     * Said they were not searching to fingerprint_register_verify;
-     */
-    public static final int FINGERPRINT_NO_SEARCH = 0x09;
-    /**
      * Indicates characteristics merge failed;
      */
     public static final int FINGERPRINT_REG_MODEL_FAIL = 0x0a;
-    /**
-     * ； Represents the address number when accessing
-     * fingerprint_register_verify database fingerprint_register_verify database beyond the scope;
-     */
-    public static final int FLASH_OUT_OF_INDEX = 0x0b;
-    /**
-     * Represents a template from a fingerprint_register_verify database read
-     * error or invalid;
-     */
-    public static final int READ_MODEL_FROM_FLASH = 0x0c;
+
     /**
      * Uploads a feature to fail;
      */
@@ -99,14 +84,7 @@ public class FingerprintAPI {
     /**
      * Means to delete the template failed;
      */
-    public static final int DELETE_MODEL_FAIL = 0x10;
-    /**
-     * ； Empty fingerprint_register_verify database indicates failure;
-     */
-    public static final int EMPTY_FLASH = 0x11;
-    /**
-     * ； That they can not enter a low power state;
-     */
+
     public static final int NOT_ENTRY_LESS_STATUS = 0x12;
     /**
      * ； Means that the password is incorrect;
@@ -133,10 +111,6 @@ public class FingerprintAPI {
      * 自动注册（enroll）失败； Automatically register (enroll) failed;
      */
     public static final int ENROLL_FAIL = 0x1e;
-    /**
-     * 指纹库满 Fingerprint database is full
-     */
-    public static final int FLASH_FULL = 0x1f;
     /**
      * 无响应 No response
      */
@@ -234,107 +208,6 @@ public class FingerprintAPI {
      * representation fingerprint_register_verify database Confirmation code=18H FLASH
      * write error indicates Confirmation code=ffH Indicates no response
      */
-    public synchronized int PSStoreChar(int bufferId, int pageId) {
-        byte[] pageIDArray = short2byte((short) pageId);
-        // Log.i("whw", "pageid hex=" + DataUtils.toHexString(pageIDArray));
-        int checkSum = 0x01 + 0x00 + 0x06 + 0x06 + bufferId
-                + (pageIDArray[0] & 0xff) + (pageIDArray[1] & 0xff);
-        byte[] checkSumArray = short2byte((short) checkSum);
-        // Log.i("whw",
-        // "checkSumArray hex=" + DataUtils.toHexString(checkSumArray)
-        // + "    checkSum=" + checkSum);
-        byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
-                (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
-                (byte) 0x06, (byte) 0x06, (byte) bufferId,
-                (byte) pageIDArray[0], (byte) pageIDArray[1],
-                (byte) checkSumArray[0], (byte) checkSumArray[1]};
-        sendCommand(command);
-        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
-        printlog("PSStoreChar", length);
-        if (length == 12) {
-            return buffer[9];
-        }
-        return NO_RESPONSE;
-    }
-
-    /**
-     * 将flash 数据库中指定pageId号的指纹模板读入到模板缓冲区CharBuffer1或CharBuffer2
-     * bufferId:只能为1h或2h pageId：范围为0~1023 输入参数： BufferID(缓冲区号)，PageID(指纹库模板号)
-     *
-     * @param index pageId号
-     * @return Confirmation code Confirmation code=00H Readout indicates success
-     * Confirmation code=01H An indication that the package is wrong
-     * Confirmation code=0cH Is the readout wrong or wrong template
-     * Confirmation code=0BH PageID beyond the scope of representation
-     * fingerprint_register_verify database Confirmation code=ffH Indicates no response
-     */
-    public synchronized int PSLoadChar(int bufferId, int pageId) {
-        byte[] pageIDArray = short2byte((short) pageId);
-        int checkSum = 0x01 + 0x00 + 0x06 + 0x07 + bufferId
-                + (pageIDArray[0] & 0xff) + (pageIDArray[1] & 0xff);
-        byte[] checkSumArray = short2byte((short) checkSum);
-        byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
-                (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
-                (byte) 0x06, (byte) 0x07, (byte) bufferId,
-                (byte) pageIDArray[0], (byte) pageIDArray[1],
-                (byte) checkSumArray[0], (byte) checkSumArray[1]};
-        sendCommand(command);
-        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
-        printlog("PSLoadChar", length);
-        if (length == 12) {
-            return buffer[9];
-        }
-        return NO_RESPONSE;
-    }
-
-    /**
-     * 以CharBuffer1 或CharBuffer2 中的特征文件搜索整个或部分指纹库。若搜索到，则返回页码。 输入参数： BufferID，
-     * StartPage(起始页)，PageNum（页数） 返回参数： 确认字，页码（相配指纹模板）
-     *
-     * @param bufferId    缓冲区1h，2h
-     * @param startPageId 起始页
-     * @param pageNum     页数
-     * @param bufferId    buffer:1h，2h
-     * @param startPageId
-     * @param pageNum
-     * @return Confirmation code=00H Indicates that the search to; Confirmation
-     * code=01H An indication that the package is wrong； Confirmation
-     * code=09H Said they were not searched; this time with a score of 0
-     * page Confirmation code=ffH Indicates no response
-     */
-    public synchronized Result PSSearch(int bufferId, int startPageId,
-                                        int pageNum) {
-        byte[] startPageIDArray = short2byte((short) startPageId);
-        byte[] pageNumArray = short2byte((short) pageNum);
-        int checkSum = 0x01 + 0x00 + 0x08 + 0x04 + bufferId
-                + (startPageIDArray[0] & 0xff) + (startPageIDArray[1] & 0xff)
-                + (pageNumArray[0] & 0xff) + (pageNumArray[1] & 0xff);
-        byte[] checkSumArray = short2byte((short) checkSum);
-        byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
-                (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
-                (byte) 0x08, (byte) 0x04, (byte) bufferId,
-                (byte) startPageIDArray[0], (byte) startPageIDArray[1],
-                (byte) pageNumArray[0], (byte) pageNumArray[1],
-                (byte) checkSumArray[0], (byte) checkSumArray[1]};
-        sendCommand(command);
-        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
-        printlog("PSSearch", length);
-        Result result = new Result();
-        if (length == 16) {
-            result.code = buffer[9];
-            result.pageId = getShort(buffer[10], buffer[11]);
-            result.matchScore = getShort(buffer[12], buffer[13]);
-        } else {
-            result.code = NO_RESPONSE;
-        }
-        return result;
-    }
-
-    /**
-     * 精确比对CharBuffer1与CharBuffer2中的特征文件 注意点:下位机返回的数据里面还有一个得分，当得分大于等于50时，指纹匹配
-     *
-     * @return true：Fingerprint matching is successful false：Match fails
-     */
     public synchronized boolean PSMatch() {
         byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
                 (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
@@ -350,118 +223,7 @@ public class FingerprintAPI {
         return false;
     }
 
-    /**
-     * 采集一次指纹注册模板，在指纹库中搜索空位并存储，返回存储pageId 返回参数： 确认字，页码（相配指纹模板）
-     *
-     * @return Confirmation code=00H Indicates successful registration;
-     * Confirmation code=01H An indication that the package is wrong；
-     * Confirmation code=1eH Means that the registration failed.
-     * Confirmation code=ffH Indicates no response
-     */
-    public synchronized Result PSEnroll() {
-        byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
-                (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
-                (byte) 0x03, (byte) 0x10, (byte) 0x00, (byte) 0x14};
-        sendCommand(command);
-        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
-        printlog("PSEnroll", length);
-        Result result = new Result();
-        if (length == 14) {
-            result.code = buffer[9];
-            result.pageId = getShort(buffer[10], buffer[11]);
-        } else {
-            result.code = NO_RESPONSE;
-        }
-        return result;
-    }
 
-    /**
-     * 自动采集指纹，在指纹库中搜索目标模板并返回搜索结果。 如果目标模板同当前采集的指纹比对得分大于最高阀值，
-     * 并且目标模板为不完整特征则以采集的特征更新目标模板的空白区域。 返回参数： 确认码，页码（相配指纹模板）
-     *
-     * @return Confirmation code=00H Indicates that the search to; Confirmation
-     * code=01H An indication that the package is wrong； Confirmation
-     * code=09H Said they were not searched; this time with a score of 0
-     * page Confirmation code=ffH Indicates no response
-     */
-    public synchronized Result PSIdentify() {
-        byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
-                (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
-                (byte) 0x03, (byte) 0x11, (byte) 0x00, (byte) 0x15};
-        sendCommand(command);
-        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
-        printlog("PSIdentify", length);
-        Result result = new Result();
-        if (length == 16) {
-            result.code = buffer[9];
-            result.pageId = getShort(buffer[10], buffer[11]);
-            result.matchScore = getShort(buffer[12], buffer[13]);
-        } else {
-            result.code = NO_RESPONSE;
-        }
-        return result;
-    }
-
-    /**
-     * 删除模板 删除flash 数据库中指定ID 号开始的N 个指纹模板 输入参数：PageID(指纹库模板号)，N 删除的模板个数。
-     *
-     * @param pageIDStart
-     * @param delNum
-     * @param pageIDStart
-     * @param delNum
-     * @return Confirmation code=00H Success means to delete the template;
-     * Confirmation code=01H An indication that the package is wrong；
-     * Confirmation code=10H Means to delete the template failed;
-     * Confirmation code=ffH Indicates no response
-     */
-    public synchronized int PSDeleteChar(short pageIDStart, short delNum) {
-        byte[] pageIDArray = short2byte(pageIDStart);
-        byte[] delNumArray = short2byte(delNum);
-        int checkSum = 0x01 + 0x07 + 0x0c + (pageIDArray[0] & 0xff)
-                + (pageIDArray[1] & 0xff) + (delNumArray[0] & 0xff)
-                + (delNumArray[1] & 0xff);
-        byte[] checkSumArray = short2byte((short) checkSum);
-        byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
-                (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
-                (byte) 0x07, (byte) 0x0c, pageIDArray[0], pageIDArray[1],
-                delNumArray[0], delNumArray[1], checkSumArray[0],
-                checkSumArray[1]};
-        sendCommand(command);
-        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
-        printlog("PSDeleteChar", length);
-        if (length == 12) {
-            return buffer[9];
-        }
-        return NO_RESPONSE;
-    }
-
-    /**
-     * 功能说明： 删除flash 数据库中所有指纹模板
-     *
-     * @return Confirmation code=00H Empty successful representation;
-     * Confirmation code=01H An indication that the package is wrong；
-     * Confirmation code=11H Represents clear failure; Confirmation
-     * code=ffH Indicates no response
-     */
-    public synchronized int PSEmpty() {
-        byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
-                (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
-                (byte) 0x03, (byte) 0x0d, (byte) 0x00, (byte) 0x11};
-        sendCommand(command);
-        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
-        printlog("PSEmpty", length);
-        if (length == 12) {
-            return buffer[9];
-        }
-        return NO_RESPONSE;
-    }
-
-    /**
-     * 将特征缓冲区中的特征文件上传给上位机
-     *
-     * @return byte[]：Length success is 512 bytes null:Characteristics file
-     * failed upload
-     */
     public synchronized byte[] PSUpChar(int bufferId) {
         byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
                 (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
@@ -508,67 +270,6 @@ public class FingerprintAPI {
         }
         return NO_RESPONSE;
     }
-
-    /**
-     * 功能说明：读取录入模版的索引表。 输入参数： 索引表页码, 页码0,1,2,3 分别对应模版从0-256，256-512，
-     * 512-768，768-1024 的索引，每1 位代表一个模版，1 表示对应存储区域 的模版已经录入，0 表示没录入。
-     *
-     * @param pageId
-     * @return
-     */
-    private synchronized int PS_ReadIndexTable(byte[] data, int pageId) {
-        int checkSum = 0x01 + 0x04 + 0x1f + pageId;
-        byte[] checkSumArray = short2byte((short) checkSum);
-        byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
-                (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
-                (byte) 0x04, (byte) 0x1f, (byte) pageId, checkSumArray[0],
-                checkSumArray[1]};
-        sendCommand(command);
-        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
-        printlog("PS_ReadIndexTable", length);
-        if (length == 44) {
-            System.arraycopy(buffer, 10, data, 0, 32);
-            Log.i("whw", "PS_ReadIndexTable=" + DataUtils.toHexString(data));
-            return buffer[9];
-        }
-        return NO_RESPONSE;
-    }
-
-    private final byte[] compareData = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20,
-            0x40, (byte) 0x80};
-
-    /**
-     * Function Description: Get a can store fingerprint_register_verify model ID(0~1009)
-     *
-     * @return If it returns -1, which means that the fingerprint_register_verify database is
-     * full.
-     */
-    public synchronized int getValidId() {
-        byte[] data = new byte[32];
-        int response = -1;
-        for (int i = 0; i < 4; i++) {
-            response = PS_ReadIndexTable(data, i);
-            if (response == 0x00) {
-                for (int j = 0; j < data.length; j++) {
-                    for (int k = 0; k < compareData.length; k++) {
-                        if ((compareData[k] & data[j]) == 0x00) {
-                            Log.i("whw", "j=" + j + "   k=" + k);
-                            int id = i * 256 + j * 8 + k;
-                            if (id <= 1009) {
-                                return id;
-                            } else {
-                                return -1;
-                            }
-                        }
-                    }
-
-                }
-            }
-        }
-        return -1;
-    }
-
-    public static int tempLength;
 
     /**
      * 将图像缓冲区的数据上传给上位机
@@ -902,33 +603,55 @@ public class FingerprintAPI {
         Log.i("whw", tag + "=" + DataUtils.toHexString(temp));
     }
 
-    public class Result {
-        /**
-         * 确认码
-         */
-        public int code;
-        /**
-         * 页码
-         */
-        public int pageId;
-        /**
-         * 得分
-         */
-        public int matchScore;
+    public synchronized int PSStoreChar(int bufferId, int pageId) {
+        byte[] pageIDArray = short2byte((short) pageId);
+        // Log.i("whw", "pageid hex=" + DataUtils.toHexString(pageIDArray));
+        int checkSum = 0x01 + 0x00 + 0x06 + 0x06 + bufferId
+                + (pageIDArray[0] & 0xff) + (pageIDArray[1] & 0xff);
+        byte[] checkSumArray = short2byte((short) checkSum);
+        // Log.i("whw",
+        // "checkSumArray hex=" + DataUtils.toHexString(checkSumArray)
+        // + "    checkSum=" + checkSum);
+        byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
+                (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
+                (byte) 0x06, (byte) 0x06, (byte) bufferId,
+                (byte) pageIDArray[0], (byte) pageIDArray[1],
+                (byte) checkSumArray[0], (byte) checkSumArray[1]};
+        sendCommand(command);
+        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
+        printlog("PSStoreChar", length);
+        if (length == 12) {
+            return buffer[9];
+        }
+        return NO_RESPONSE;
     }
 
     /**
-     * 校准
+     * 将flash 数据库中指定pageId号的指纹模板读入到模板缓冲区CharBuffer1或CharBuffer2
+     * bufferId:只能为1h或2h pageId：范围为0~1023 输入参数： BufferID(缓冲区号)，PageID(指纹库模板号)
+     *
+     * @param index pageId号
+     * @return Confirmation code Confirmation code=00H Readout indicates success
+     * Confirmation code=01H An indication that the package is wrong
+     * Confirmation code=0cH Is the readout wrong or wrong template
+     * Confirmation code=0BH PageID beyond the scope of representation
+     * fingerprint_register_verify database Confirmation code=ffH Indicates no response
      */
-    public synchronized int PSCalibration() {
+    public synchronized int PSLoadChar(int bufferId, int pageId) {
+        byte[] pageIDArray = short2byte((short) pageId);
+        int checkSum = 0x01 + 0x00 + 0x06 + 0x07 + bufferId
+                + (pageIDArray[0] & 0xff) + (pageIDArray[1] & 0xff);
+        byte[] checkSumArray = short2byte((short) checkSum);
         byte[] command = {(byte) 0xef, (byte) 0x01, (byte) 0xff, (byte) 0xff,
                 (byte) 0xff, (byte) 0xff, (byte) 0x01, (byte) 0x00,
-                (byte) 0x03, (byte) 0x2e, (byte) 0x00, (byte) 0x32};
+                (byte) 0x06, (byte) 0x07, (byte) bufferId,
+                (byte) pageIDArray[0], (byte) pageIDArray[1],
+                (byte) checkSumArray[0], (byte) checkSumArray[1]};
         sendCommand(command);
-        int length = SerialPortManager.getInstance().read(buffer, 15000, 100);
-        printlog("calibration", length);
-        if (length == 12 && buffer[9] == 0x00) {
-            return 0x00;
+        int length = SerialPortManager.getInstance().read(buffer, 3000, 100);
+        printlog("PSLoadChar", length);
+        if (length == 12) {
+            return buffer[9];
         }
         return NO_RESPONSE;
     }

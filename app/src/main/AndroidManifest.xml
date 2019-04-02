@@ -23,7 +23,7 @@
         android:configChanges="orientation|keyboardHidden|screenSize"
         android:label="@string/app_name">
         <activity
-            android:name=".activity.RegisterVerifyActivity"
+            android:name=".activity.FPRegisterVerifyActivity"
             android:theme="@android:style/Theme.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

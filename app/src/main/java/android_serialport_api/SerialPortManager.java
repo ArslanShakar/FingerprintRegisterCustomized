@@ -16,18 +16,12 @@ import java.security.InvalidParameterException;
 import com.practice.android.fingerprintregisterdemo.utils.DataUtils;
 
 public class SerialPortManager {
-
-    /**
-     * 串口波特率
-     */
     private static int BAUDRATE = 460800;
 
     public static boolean switchRFID = false;
 
     final byte[] UP = {'1'};
     final byte[] DOWN = {'0'};
-
-    final byte[] FBIUP = {'2'};
     final byte[] FBIDOWN = {'3'};
 
     private static String PATH = "/dev/ttyHSL0";
@@ -35,7 +29,6 @@ public class SerialPortManager {
 
     private static SerialPortManager mSerialPortManager = new SerialPortManager();
 
-    private static final byte[] SWITCH_COMMAND = "D&C00040104".getBytes();
 
     private SerialPort mSerialPort = null;
 
@@ -63,41 +56,10 @@ public class SerialPortManager {
         return mSerialPortManager;
     }
 
-    public void setBaudrate(int baudrate) {
-        BAUDRATE = baudrate;
-    }
-
-    public int getBaudrate() {
-        return BAUDRATE;
-    }
-
-    /**
-     * 判断串口是否打开
-     *
-     * @return true：打开 false：未打开
-     */
     public boolean isOpen() {
         return isOpen;
     }
 
-    /**
-     * 切换成读取RFID
-     *
-     * @return
-     */
-    public void switchStatus() {
-        if (!isOpen) {
-            return;
-        }
-        write(SWITCH_COMMAND);
-        Log.i("whw", "SWITCH_COMMAND hex=" + new String(SWITCH_COMMAND));
-        SystemClock.sleep(200);
-        if (!isOpen) {
-            return;
-        }
-        switchRFID = true;
-        Log.i("whw", "SWITCH_COMMAND end");
-    }
 
     /**
      * 打开串口，如果需要读取身份证和指纹信息，必须先打开串口，调用此方法
@@ -131,53 +93,6 @@ public class SerialPortManager {
         return false;
     }
 
-    public boolean openSerialPortFBI() {
-        if (mSerialPort == null) {
-            // 上电
-            try {
-                setUpGpio();
-                if (isFBIDevice())
-                    setUpGpioFbi();
-                Log.i("whw", "setUpGpio status=" + getGpioStatus());
-                mSerialPort = new SerialPort(new File(PATH), BAUDRATE, 0);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return false;
-            }
-
-            mOutputStream = mSerialPort.getOutputStream();
-            mInputStream = mSerialPort.getInputStream();
-            mReadThread = new ReadThread();
-            mReadThread.start();
-            isOpen = true;
-            firstOpen = true;
-            return true;
-        }
-        return false;
-    }
-
-    public boolean openSerialPortIC() {
-        if (mSerialPort == null) {
-            // 上电
-            try {
-                setUpGpioIC();
-                Log.i("whw", "setUpGpio status=" + getGpioStatus());
-                mSerialPort = new SerialPort(new File("/dev/ttyHSL1"), 115200, 0);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return false;
-            }
-
-            mOutputStream = mSerialPort.getOutputStream();
-            mInputStream = mSerialPort.getInputStream();
-            mReadThread = new ReadThread();
-            mReadThread.start();
-            isOpen = true;
-            firstOpen = true;
-            return true;
-        }
-        return false;
-    }
 
     private boolean openSerialPort2() {
         if (mSerialPort == null) {
@@ -233,67 +148,6 @@ public class SerialPortManager {
         }
     }
 
-    public void closeSerialPortFBI() {
-        if (mReadThread != null)
-            mReadThread.interrupt();
-        mReadThread = null;
-        try {
-            // 断电
-            setDownGpio();
-            if (isFBIDevice())
-                setDownGpioFbi();
-            Log.i("whw", "setDownGpio status=" + getGpioStatus());
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        }
-        if (mSerialPort != null) {
-            try {
-                mOutputStream.close();
-                mInputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mSerialPort.close();
-            mSerialPort = null;
-        }
-        isOpen = false;
-        firstOpen = false;
-        mCurrentSize = 0;
-        switchRFID = false;
-        if (looperBuffer != null) {
-            looperBuffer = null;
-        }
-    }
-
-    public void closeSerialPortIC() {
-        if (mReadThread != null)
-            mReadThread.interrupt();
-        mReadThread = null;
-        try {
-            // 断电
-            setDownGpioIC();
-            Log.i("whw", "setDownGpio status=" + getGpioStatus());
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        }
-        if (mSerialPort != null) {
-            try {
-                mOutputStream.close();
-                mInputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mSerialPort.close();
-            mSerialPort = null;
-        }
-        isOpen = false;
-        firstOpen = false;
-        mCurrentSize = 0;
-        switchRFID = false;
-        if (looperBuffer != null) {
-            looperBuffer = null;
-        }
-    }
 
     private void closeSerialPort2() {
         if (mReadThread != null)
@@ -360,10 +214,6 @@ public class SerialPortManager {
         return mCurrentSize;
     }
 
-    protected synchronized int readFixedLength(byte buffer[], int waittime, int requestLength) {
-        return readFixedLength(buffer, waittime, requestLength, 15);
-    }
-
     protected synchronized int readFixedLength(byte buffer[], int waittime, int requestLength, int interval) {
         if (!isOpen) {
             return 0;
@@ -411,17 +261,7 @@ public class SerialPortManager {
         return mCurrentSize;
     }
 
-    public void clearBuffer() {
-        mBuffer = null;
-        mBuffer = new byte[50 * 1024];
-        mCurrentSize = 0;
-    }
-
     private LooperBuffer looperBuffer;
-
-    public void setLoopBuffer(LooperBuffer looperBuffer) {
-        this.looperBuffer = looperBuffer;
-    }
 
     private void writeCommand(byte[] data) {
         if (!isOpen) {
@@ -436,10 +276,6 @@ public class SerialPortManager {
             mOutputStream.write(data);
         } catch (IOException e) {
         }
-    }
-
-    protected synchronized void clearReceiveData() {
-        mCurrentSize = 0;
     }
 
     public synchronized void write(byte[] data) {
@@ -459,27 +295,10 @@ public class SerialPortManager {
         fw.close();
     }
 
-    private void setUpGpioFbi() throws IOException {
-        FileOutputStream fw = new FileOutputStream("/sys/class/fbicode_gpios/fbicoe_state/control");
-        fw.write(FBIUP);
-        fw.close();
-    }
 
     private void setDownGpioFbi() throws IOException {
         FileOutputStream fw = new FileOutputStream("/sys/class/fbicode_gpios/fbicoe_state/control");
         fw.write(FBIDOWN);
-        fw.close();
-    }
-
-    private void setUpGpioIC() throws IOException {
-        FileOutputStream fw = new FileOutputStream("/sys/class/icswitch_gpios/icswitch_state/switch");
-        fw.write(UP);
-        fw.close();
-    }
-
-    private void setDownGpioIC() throws IOException {
-        FileOutputStream fw = new FileOutputStream("/sys/class/icswitch_gpios/icswitch_state/switch");
-        fw.write(DOWN);
         fw.close();
     }
 
